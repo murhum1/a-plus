@@ -78,6 +78,7 @@ class CourseStudentsViewSet(NestedViewSetMixin,
     filter_backends = (
         IsAdminOrUserObjIsSelf,
     )
+    lookup_field = 'user_id' # UserProfile.user.id
     lookup_url_kwarg = 'user_id'
     lookup_value_regex = REGEX_INT_ME
     parent_lookup_map = {'course_id': 'enrolled.id'}
@@ -95,6 +96,7 @@ class CoursePointsViewSet(NestedViewSetMixin,
     filter_backends = (
         IsCourseAdminOrUserObjIsSelf,
     )
+    lookup_field = 'user_id' # UserProfile.user.id
     lookup_url_kwarg = 'user_id'
     lookup_value_regex = REGEX_INT_ME
     parent_lookup_map = {'course_id': 'enrolled.id'}
@@ -202,6 +204,7 @@ class CourseUsertagsViewSet(NestedViewSetMixin,
     permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES + [
         OnlyCourseTeacherPermission,
     ]
+    lookup_field = 'id'
     lookup_url_kwarg = 'usertag_id'
     serializer_class = CourseUsertagSerializer
     queryset = UserTag.objects.all()
@@ -215,6 +218,7 @@ class CourseUsertaggingsViewSet(NestedViewSetMixin,
     permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES + [
         OnlyCourseTeacherPermission,
     ]
+    lookup_field = 'id'
     lookup_url_kwarg = 'usertag_id'
     serializer_class = CourseUsertaggingsSerializer
     queryset = ( UserTagging.objects
@@ -244,6 +248,7 @@ class CourseSubmissionDataViewSet(ListSerializerMixin,
     filter_backends = (
         IsAdminOrUserObjIsSelf,
     )
+    lookup_field = 'user_id' # UserProfile.user.id
     lookup_url_kwarg = 'user_id'
     lookup_value_regex = REGEX_INT_ME
     parent_lookup_map = {'course_id': 'enrolled.id'}

@@ -48,6 +48,7 @@ class ExerciseViewSet(mixins.RetrieveModelMixin,
     fetched from /api/v2/courses/1/exercices)
     /api/v2/exercises/{exercise_id} (/api/v2/exercises/ does not actually exist)
     """
+    lookup_field = 'id'
     lookup_url_kwarg = 'exercise_id'
     lookup_value_regex = REGEX_INT
     serializer_class = ExerciseSerializer
@@ -131,8 +132,8 @@ class ExerciseSubmissionsViewSet(NestedViewSetMixin,
         SubmissionVisibleFilter,
         IsAdminOrUserObjIsSelf,
     )
+    lookup_field = 'submitters__user__user_id' # user__user_id == userprofile.user.id
     lookup_url_kwarg = 'user_id'
-    lookup_field = 'submitters__user__id'
     lookup_value_regex = REGEX_INT_ME
     parent_lookup_map = {
         'exercise_id': 'exercise.id',
@@ -198,6 +199,7 @@ class ExerciseSubmitterStatsViewSet(NestedViewSetMixin,
     filter_backends = (
         IsCourseAdminOrUserObjIsSelf,
     )
+    lookup_field = 'user_id' # UserProfile.user.id
     lookup_url_kwarg = 'user_id'
     lookup_value_regex = REGEX_INT_ME
     parent_lookup_map = {
@@ -247,6 +249,7 @@ class SubmissionViewSet(mixins.RetrieveModelMixin,
     Listing all submissions is not allowed (as there is no point),
     but are linked from exercises tree (`/exercise/<id>/submissions/`).
     """
+    lookup_field = 'id'
     lookup_url_kwarg = 'submission_id'
     lookup_value_regex = REGEX_INT
     serializer_class = SubmissionSerializer
