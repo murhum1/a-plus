@@ -10,9 +10,16 @@ class MeUserMixin(object):
     me_user_url_kw = 'user_id'
     me_user_value = 'me'
 
-    def dispatch(self, request, *args, **kwargs):
+    # Hook into `initial` method call chain.
+    # after calling `initial` we have done all authentication related tasks,
+    # so there is valid request.user.
+    # NOTE: this though means the kwargs passed to get method and self.kwargs are different
+    # Generic methods in framework do not use function parameters, so this is fine.
+
+    def initial(self, request, *args, **kwargs):
+        super(MeUserMixin, self).initial(request, *args, **kwargs)
+
         kw = self.me_user_url_kw
-        value = kwargs.get(kw, None)
+        value = self.kwargs.get(kw, None)
         if value and self.me_user_value == value:
-            kwargs[kw] = request.user.id
-        return super(MeUserMixin, self).dispatch(request, *args, **kwargs)
+            self.kwargs[kw] = request.user.id
