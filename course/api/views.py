@@ -184,16 +184,17 @@ class CoursePointsViewSet(NestedViewSetMixin,
         return students_results
 
     def student_information(self, student, course_id, request):
+        # FIXME: user serializer
         student_detail = reverse('api:course-points-detail', kwargs={
-            'version': 2, 'course_id': course_id, 'user_id': student.id,
+            'version': 2, 'course_id': course_id, 'user_id': student.user.id,
         }, request=request)
         student_link = reverse('api:user-detail', kwargs={
-            'version': 2, 'user_id': student.id,
+            'version': 2, 'user_id': student.user.id,
         }, request=request)
         return {
-            "studentnumber": student.student_id,
-            "userprofile": student_link,
-            "pointsdetails": student_detail,
+            "url": student_detail,
+            "student_id": student.student_id,
+            "user": student_link,
         }
 
 
