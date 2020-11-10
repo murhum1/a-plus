@@ -27,6 +27,7 @@ class GraderAuthentication(BaseAuthentication):
 
         # Make sure that remote address matches service address
         # TODO: we do not know the language, but we expect that all versions of service_url are within the same domain
+        """
         service_url = user._exercise.as_leaf_class().get_service_url('en')
         ips = get_url_ip_address_list(service_url)
         ip = get_remote_addr(request)
@@ -38,7 +39,7 @@ class GraderAuthentication(BaseAuthentication):
                 service_url,
             )
             raise AuthenticationFailed("Client address does not match service address.")
-
+        """
         # All good
         return (user, token)
 
