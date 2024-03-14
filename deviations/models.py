@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, TypeVa
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from course.models import CourseInstance
+from course.models import CourseInstance, CourseModule
 from exercise.exercise_models import BaseExercise
 from exercise.submission_models import Submission
 from userprofile.models import UserProfile
 from lib.fields import DefaultForeignKey
 from lib.models import UrlMixin
-
 
 TModel = TypeVar('TModel', bound='SubmissionRuleDeviation')
 class SubmissionRuleDeviationManager(models.Manager[TModel], Generic[TModel]):
@@ -93,6 +92,14 @@ class SubmissionRuleDeviation(UrlMixin, models.Model):
     exercise = DefaultForeignKey(BaseExercise,
         verbose_name=_('LABEL_EXERCISE'),
         on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    module = DefaultForeignKey(CourseModule,
+        verbose_name=_('LABEL_MODULE'),
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
     submitter = models.ForeignKey(UserProfile,
         verbose_name=_('LABEL_SUBMITTER'),
@@ -120,10 +127,19 @@ class SubmissionRuleDeviation(UrlMixin, models.Model):
         verbose_name_plural = _('MODEL_NAME_SUBMISSION_RULE_DEVIATION_PLURAL')
         abstract = True
         unique_together = ["exercise", "submitter"]
+        constraints = [
+            models.CheckConstraint(
+                name="%(class)s_require_exercise_or_module",
+                check=(
+                    models.Q(exercise__isnull=True, module__isnull=False) |
+                    models.Q(exercise__isnull=False, module__isnull=True)
+                )
+            )
+        ]
 
     def get_url_kwargs(self):
         # pylint: disable-next=use-dict-literal
-        return dict(deviation_id=self.id, **self.exercise.course_instance.get_url_kwargs())
+        return dict(deviation_id=self.id, **self.deviation_target.course_instance.get_url_kwargs())
 
     def update_by_form(self, form_data: Dict[str, Any]) -> None:
         """
@@ -137,6 +153,10 @@ class SubmissionRuleDeviation(UrlMixin, models.Model):
         Whether this deviation can be grouped with another deviation in tables.
         """
         raise NotImplementedError()
+    
+    @property
+    def deviation_target(self):
+        return self.exercise or self.module
 
     @classmethod
     def get_list_url(cls, instance: CourseInstance) -> str:
@@ -188,7 +208,8 @@ class DeadlineRuleDeviation(SubmissionRuleDeviation):
         return normal_deadline + self.get_extra_time()
 
     def get_normal_deadline(self):
-        return self.exercise.course_module.closing_time
+        module = self.module if self.module else self.exercise.course_module
+        return module.closing_time
 
     def update_by_form(self, form_data: Dict[str, Any]) -> None:
         seconds = form_data.get('seconds')
@@ -202,7 +223,8 @@ class DeadlineRuleDeviation(SubmissionRuleDeviation):
 
     def is_groupable(self, other: 'DeadlineRuleDeviation') -> bool:
         return (
-            self.extra_seconds == other.extra_seconds
+            self.exercise
+            and self.extra_seconds == other.extra_seconds
             and self.without_late_penalty == other.without_late_penalty
         )
 

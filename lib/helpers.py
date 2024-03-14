@@ -12,7 +12,8 @@ from django.conf import settings
 from django.utils.crypto import get_random_string as django_get_random_string
 from django.utils.deprecation import RemovedInNextVersionWarning
 from django.utils.translation import get_language
-
+from django.utils.dateparse import parse_datetime
+from django.utils import timezone
 
 def is_ajax(request):
     """
@@ -226,6 +227,19 @@ def format_points(points: int, is_revealed: bool, is_container: bool) -> str:
     if is_container:
         return f'{points}+'
     return '?'
+
+def delta_in_seconds_from_closing_to_date(course_module, future_date):
+    module_close = course_module.closing_time
+    # module_close is in utc format 2018-04-10 23:59:00+00:00
+    # while future_date from the teacher submitted form might
+    # be in a different format, e.g., 2018-05-15 23:59:00+03:00
+    # -> convert future_date to same format as module_close
+    string_date = str(future_date)[:19]
+    converted = timezone.make_aware(
+            parse_datetime(string_date),
+            timezone.get_current_timezone())
+    delta = converted - module_close
+    return delta.days * 24 * 60 * 60 + delta.seconds
 
 
 class Enum:

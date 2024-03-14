@@ -36,7 +36,8 @@ from lib.helpers import (
     resize_image,
     roman_numeral,
     safe_file_name,
-    url_with_query_in_data
+    url_with_query_in_data,
+    delta_in_seconds_from_closing_to_date
 )
 from lib.models import UrlMixin
 from lib.typing import AnyUser
@@ -1448,6 +1449,9 @@ class CourseModule(CourseModuleProto, models.Model):
     def number_of_submitters(self):
         return self.course_instance.students\
             .filter(submissions__exercise__course_module=self).distinct().count()
+    
+    def delta_in_seconds_from_closing_to_date(self, future_date):
+        return delta_in_seconds_from_closing_to_date(self, future_date)
 
 
 class LearningObjectCategory(models.Model):
