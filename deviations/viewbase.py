@@ -1,6 +1,5 @@
 from itertools import groupby
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
-import datetime
 
 from django.db import models
 from django.db.models import Q
@@ -132,18 +131,7 @@ class OverrideDeviationsView(CourseInstanceMixin, BaseFormView):
             Q(exercise__in=self.exercises) | Q(module__in=self.modules),
             submitter__in=self.submitters,
         )
-        self.new_deviation_seconds = new_deviation_seconds(
-            self.existing_deviations[0],
-            self.session_data.get('seconds'),
-            self.session_data.get('new_date')
-        )
-        self.new_deviation_date = new_deviation_date(
-            self.existing_deviations[0],
-            self.session_data.get('seconds'),
-            self.session_data.get('new_date')
-        )
-        self.note("session_data", "exercises", "submitters", "existing_deviations",
-                   "new_deviation_date", "new_deviation_seconds")
+        self.note("session_data", "exercises", "submitters", "existing_deviations")
 
     def form_valid(self, form: forms.BaseForm) -> HttpResponse:
         self.override_deviations = set()
@@ -365,30 +353,3 @@ def get_submitters(form_data: Dict[str, Any]) -> models.QuerySet[UserProfile]:
         models.Q(id__in=form_data.get('submitter', []))
         | models.Q(taggings__tag__in=form_data.get('submitter_tag', []))
     ).distinct()
-
-
-def new_deviation_seconds(
-        deviation: DeadlineRuleDeviation,
-        seconds: Optional[int],
-        date: Optional[datetime.datetime]
-        ) -> int:
-    """
-    Get the extra seconds for a deadline deviation after being overridden.
-    """
-    if date:
-        return deviation.deviation_target.delta_in_seconds_from_closing_to_date(date)
-    return seconds
-
-
-def new_deviation_date(
-        deviation: DeadlineRuleDeviation,
-        seconds: Optional[int],
-        date: Optional[datetime.datetime]
-        ) -> datetime.datetime:
-    """
-    Get the new deadline for a deadline deviation after being overridden.
-    """
-    if date:
-        return date
-    module = deviation.module if deviation.module else deviation.exercise.course_module
-    return module.closing_time + datetime.timedelta(seconds=seconds)

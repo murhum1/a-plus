@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+import datetime
 
 from django.utils.dateparse import parse_datetime
 
@@ -54,6 +55,20 @@ class OverrideDeadlinesView(OverrideDeviationsView):
     template_name = "deviations/override_dl.html"
     deviation_model = DeadlineRuleDeviation
     session_key = 'add-deviations-data-dl'
+
+    def get_common_objects(self) -> None:
+        super().get_common_objects()
+        self.new_deviation_seconds = new_deviation_seconds(
+            self.existing_deviations[0],
+            self.session_data.get('seconds'),
+            self.session_data.get('new_date')
+        )
+        self.new_deviation_date = new_deviation_date(
+            self.existing_deviations[0],
+            self.session_data.get('seconds'),
+            self.session_data.get('new_date')
+        )
+        self.node("new_deviation_seconds", "new_deviation_date")
 
     def get_success_url(self) -> str:
         return self.instance.get_url('deviations-add-dl')
@@ -120,3 +135,29 @@ class RemoveSubmissionsView(RemoveDeviationsView):
     template_name = "deviations/remove_submissions.html"
     form_class = RemoveDeviationForm
     deviation_model = MaxSubmissionsRuleDeviation
+
+def new_deviation_seconds(
+        deviation: DeadlineRuleDeviation,
+        seconds: Optional[int],
+        date: Optional[datetime.datetime]
+        ) -> int:
+    """
+    Get the extra seconds for a deadline deviation after being overridden.
+    """
+    if date:
+        return deviation.deviation_target.delta_in_seconds_from_closing_to_date(date)
+    return seconds
+
+
+def new_deviation_date(
+        deviation: DeadlineRuleDeviation,
+        seconds: Optional[int],
+        date: Optional[datetime.datetime]
+        ) -> datetime.datetime:
+    """
+    Get the new deadline for a deadline deviation after being overridden.
+    """
+    if date:
+        return date
+    module = deviation.module if deviation.module else deviation.exercise.course_module
+    return module.closing_time + datetime.timedelta(seconds=seconds)
