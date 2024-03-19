@@ -68,7 +68,7 @@ class OverrideDeadlinesView(OverrideDeviationsView):
             self.session_data.get('seconds'),
             self.session_data.get('new_date')
         )
-        self.node("new_deviation_seconds", "new_deviation_date")
+        self.note("new_deviation_seconds", "new_deviation_date")
 
     def get_success_url(self) -> str:
         return self.instance.get_url('deviations-add-dl')

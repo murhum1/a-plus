@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from edit_course.operations.configure import ConfigParts
     from exercise.exercise_models import LearningObject
     from threshold.models import CourseModuleRequirement
+    from deviations.models import DeadlineRuleDeviation, MaxSubmissionsRuleDeviation
 
 
 logger = logging.getLogger('aplus.course')
@@ -1344,6 +1345,8 @@ class CourseModule(CourseModuleProto, models.Model):
         id: int
         learning_objects: RelatedManager[LearningObject]
         requirements: RelatedManager[CourseModuleRequirement]
+        deadlineruledeviation_set: RelatedManager['DeadlineRuleDeviation']
+        maxsubmissionsruledeviation_set: RelatedManager['MaxSubmissionsRuleDeviation']
 
     class Meta:
         verbose_name = _('MODEL_NAME_COURSE_MODULE')

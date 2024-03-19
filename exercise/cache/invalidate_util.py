@@ -81,6 +81,12 @@ def model_module(obj: RevealRule) -> Generator[CourseModule, None, None]:
     if module is not None:
         yield module
 
+def deviation_exercises(deviation: SubmissionRuleDeviation) -> Generator[LearningObject, None, None]:
+    if deviation.exercise:
+        yield deviation.exercise
+    else:
+        for ex in LearningObject.objects.filter(course_module=deviation.module):
+            yield ex
 
 def model_exercise_as_iterable(obj: ModelTypes) -> Generator[LearningObject, None, None]:
     exercise = model_exercise(obj)

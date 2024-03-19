@@ -45,6 +45,7 @@ from .invalidate_util import (
     model_exercise_siblings_confirms_the_level,
     model_module,
     with_user_ids,
+    deviation_exercises
 )
 from ..exercise_models import LearningObject
 from ..models import BaseExercise, Submission, SubmissionProto, RevealRule
@@ -211,14 +212,14 @@ class PointsDBData(DBDataManager):
                 DeadlineRuleDeviation.objects
                 .get_max_deviations(user.userprofile, exercise_ids)
             )
-            for exercise_id, exercise_deviations in groupby(deadline_deviations, key=lambda s: s.exercise_id):
-                self.deadline_deviations[(user_id, exercise_id)] = list(exercise_deviations)
+            for (exercise_id, deviation) in deadline_deviations.items():
+                self.deadline_deviations[(user_id, exercise_id)] = [deviation]
             submission_deviations = (
                 MaxSubmissionsRuleDeviation.objects
                 .get_max_deviations(user.userprofile, exercise_ids)
             )
-            for exercise_id, exercise_deviations in groupby(submission_deviations, key=lambda s: s.exercise_id):
-                self.submission_deviations[(user_id, exercise_id)] = list(exercise_deviations)
+            for (exercise_id, deviation) in submission_deviations.items():
+                self.submission_deviations[(user_id, exercise_id)] = [deviation]
 
             exercises = (
                 BaseExercise.bare_objects
@@ -382,8 +383,10 @@ class LearningObjectPoints(CommonPointData, LearningObjectEntryBase["ModulePoint
     NUM_PARAMS = 2
     INVALIDATORS = [
         (Submission, [post_delete, post_save], with_user_ids(model_exercise_as_iterable)),
-        (DeadlineRuleDeviation, [post_delete, post_save], with_user_ids(model_exercise_as_iterable)),
-        (MaxSubmissionsRuleDeviation, [post_delete, post_save], with_user_ids(model_exercise_as_iterable)),
+        #(DeadlineRuleDeviation, [post_delete, post_save], with_user_ids(model_exercise_as_iterable)),
+        #(MaxSubmissionsRuleDeviation, [post_delete, post_save], with_user_ids(model_exercise_as_iterable)),
+        (DeadlineRuleDeviation, [post_delete, post_save], with_user_ids(deviation_exercises)),
+        (MaxSubmissionsRuleDeviation, [post_delete, post_save], with_user_ids(deviation_exercises)),
         (RevealRule, [post_delete, post_save], with_user_ids(model_exercise_as_iterable)),
         # listen to the m2m_changed signal since submission.submitters is a many-to-many
         # field and instances must be saved before the many-to-many fields may be modified,

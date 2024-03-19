@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Optional, TypeVar, Union
+from operator import attrgetter
 
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from course.models import CourseInstance, CourseModule
@@ -19,23 +21,25 @@ class SubmissionRuleDeviationManager(models.Manager[TModel], Generic[TModel]):
         self,
         submitter: UserProfile,
         exercises: Iterable[Union[BaseExercise, int]],
-    ) -> Iterable[TModel]:
+    ) -> Dict[int, TModel]:
         """
         Returns the maximum deviations for the given submitter in the given
         exercises (one deviation per exercise is returned). The deviation may
         be granted to the submitter directly, or to some other submitter in
         their group.
         """
+        exercises = [e if isinstance(e, int) else e.id for e in exercises]
+        modules = CourseModule.objects.filter(learning_objects__in=exercises)
         deviations_self = (
             self.filter(
-                exercise__in=exercises,
+                Q(exercise__in=exercises) | Q(module__in=modules),
                 submitter=submitter,
             )
-            .select_related('exercise')
+            .select_related('exercise', 'module')
         )
         deviations_group = (
             self.filter(
-                models.Q(exercise__in=exercises)
+                ( models.Q(exercise__in=exercises) | models.Q(module__in=modules) )
                 & ~models.Q(submitter=submitter)
                 & (
                     # Check that the owner of the deviation is
@@ -52,20 +56,35 @@ class SubmissionRuleDeviationManager(models.Manager[TModel], Generic[TModel]):
                     )
                 )
             )
-            .select_related('exercise')
+            .select_related('exercise', 'module')
         )
 
         deviations = (
             deviations_self
             .union(deviations_group)
-            .order_by('exercise', self.max_order_by)
+            #.order_by('exercise', 'module', self.max_order_by)
         )
-        previous_exercise_id = None
+        max_deviations = {}
+        # pick the largest out of personal / group / module / exercise deviations
         for deviation in deviations:
-            if deviation.exercise.id == previous_exercise_id:
-                continue
-            previous_exercise_id = deviation.exercise.id
-            yield deviation
+            if deviation.module:
+                exercise_dicts = BaseExercise.objects.filter(id__in=exercises, course_module=deviation.module).values('id')
+                for d in exercise_dicts:
+                    max_deviations[d['id']] = self.get_bigger_deviation(deviation, max_deviations.get(d['id']))
+            if deviation.exercise:
+                d_id = deviation.exercise.id
+                max_deviations[d_id] = self.get_bigger_deviation(deviation, max_deviations.get(d_id))
+        return max_deviations
+    
+    def get_bigger_deviation(self, dev1: TModel, dev2: TModel):
+        if not dev2:
+            return dev1
+        if not dev1:
+            return dev2
+        if self.max_order_by[0] == '-':
+            return max(dev1, dev2, key=attrgetter(self.max_order_by[1:]))
+        else:
+            return min(dev1, dev2, key=attrgetter(self.max_order_by))
 
     def get_max_deviation(self, submitter: UserProfile, exercise: Union[BaseExercise, int]) -> Optional[TModel]:
         """
@@ -74,8 +93,7 @@ class SubmissionRuleDeviationManager(models.Manager[TModel], Generic[TModel]):
         some other submitter in their group.
         """
         deviations = self.get_max_deviations(submitter, [exercise])
-        for deviation in deviations:
-            return deviation
+        return deviations.get(exercise.id)
 
 
 class SubmissionRuleDeviation(UrlMixin, models.Model):
