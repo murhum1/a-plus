@@ -48,7 +48,7 @@ class SubmissionRuleDeviationManager(models.Manager[TModel], Generic[TModel]):
                     models.Exists(
                         # Note the two 'submitters' filters.
                         Submission.objects.filter(
-                            exercise=models.OuterRef('exercise'),
+                            Q(exercise=models.OuterRef('exercise')) | Q(exercise__course_module=models.OuterRef('module')),
                             submitters=models.OuterRef('submitter'),
                         ).filter(
                             submitters=submitter,

@@ -533,7 +533,7 @@ class DeviationsTest(TestCase):
         response = self.client.post(
             override_deadline_deviations_url,
             {
-                'override': [f'{self.user.userprofile.id}.{self.module_2_exercise_1.id}'],
+                'override': [f'{self.user.userprofile.id}.{self.module_2_exercise_1.id}.'],
             }
         )
         self.assertEqual(response.status_code, 302)
@@ -569,7 +569,7 @@ class DeviationsTest(TestCase):
         response = self.client.post(
             override_deadline_deviations_url,
             {
-                'override': [f'{self.user.userprofile.id}.{self.module_2_exercise_2.id}'],
+                'override': [f'{self.user.userprofile.id}.{self.module_2_exercise_2.id}.'],
             }
         )
         self.assertEqual(response.status_code, 302)
