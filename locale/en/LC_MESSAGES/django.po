@@ -2306,6 +2306,38 @@ msgid "COURSE_REMOVES_SUBMISSION_POSSIBILITY_STUDENTS"
 msgstr "Students will not be able to submit answers after this time."
 
 #: edit_course/course_forms.py
+msgid "COURSE_TEACHERS_EMAIL_HELPTEXT"
+msgstr "Enter email address of teacher to add"
+
+#: edit_course/course_forms.py
+msgid "COURSE_ASSISTANTS_EMAIL_HELPTEXT"
+msgstr "Enter email address of assistant to add"
+
+#: edit_course/course_forms.py
+msgid "COURSE_TEACHER_EMAIL_NOT_FOUND"
+msgstr "No user found with email address: {email}"
+
+#: edit_course/course_forms.py
+msgid "COURSE_ASSISTANT_EMAIL_NOT_FOUND"
+msgstr "No user found with email address: {email}"
+
+#: edit_course/course_forms.py
+msgid "COURSE_TEACHERS_INVALID_USER_IDS"
+msgstr "One or more teacher user IDs are invalid"
+
+#: edit_course/course_forms.py
+msgid "COURSE_ASSISTANTS_INVALID_USER_IDS"
+msgstr "One or more assistant user IDs are invalid"
+
+#: templates/email_user_select.html
+msgid "ENTER_EMAIL_TO_ADD"
+msgstr "Enter email address and press Enter/Add"
+
+#: templates/email_user_select.html
+msgid "ADD_USER"
+msgstr "Add"
+
+#: edit_course/course_forms.py
 msgid "ERROR_URL_ALREADY_TAKEN"
 msgstr "The URL is already taken."
 

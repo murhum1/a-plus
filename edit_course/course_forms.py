@@ -17,7 +17,7 @@ from course.sis import get_sis_configuration, StudentInfoSystem
 from exercise.models import CourseChapter
 from lib.validators import generate_url_key_validator
 from lib.fields import UsersSearchSelectField
-from lib.widgets import DateTimeLocalInput
+from lib.widgets import DateTimeLocalInput, EmailUserSelect
 from notification.cache import CachedNotifications
 from userprofile.models import UserProfile
 
@@ -119,16 +119,18 @@ class CourseModuleForm(FieldsetModelForm):
 
 class CourseInstanceForm(forms.ModelForm):
 
-    teachers = UsersSearchSelectField(
+    teachers = forms.CharField(
         label=_('LABEL_TEACHERS'),
-        queryset=UserProfile.objects.all(),
-        initial_queryset=UserProfile.objects.none(),
-        required=False)
-    assistants = UsersSearchSelectField(
+        required=False,
+        help_text=_('COURSE_TEACHERS_EMAIL_HELPTEXT'),
+        widget=EmailUserSelect()
+    )
+    assistants = forms.CharField(
         label=_('LABEL_ASSISTANTS'),
-        queryset=UserProfile.objects.all(),
-        initial_queryset=UserProfile.objects.none(),
-        required=False) # Not required because a course does not have to have any assistants.
+        required=False,
+        help_text=_('COURSE_ASSISTANTS_EMAIL_HELPTEXT'),
+        widget=EmailUserSelect()
+    )
 
     class Meta:
         model = CourseInstance
@@ -165,12 +167,10 @@ class CourseInstanceForm(forms.ModelForm):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.fields['teachers'].initial = self.instance.teachers.all()
-        self.fields['teachers'].initial_queryset = self.instance.teachers.all()
-        self.fields['teachers'].widget.search_api_url = api_reverse("user-list")
-        self.fields['assistants'].initial = self.instance.assistants.all()
-        self.fields['assistants'].initial_queryset = self.instance.assistants.all()
-        self.fields['assistants'].widget.search_api_url = api_reverse("user-list")
+        if self.instance:
+            self.fields['teachers'].initial = self.instance.teachers.all()
+            self.fields['assistants'].initial = self.instance.assistants.all()
+
         if self.instance and self.instance.visible_to_students:
             self.fields["url"].widget.attrs["readonly"] = "true"
             self.fields["url"].help_text = _('COURSE_URL_IDENTIFIER_LOCKED_WHILE_COURSE_VISIBLE')
@@ -180,6 +180,68 @@ class CourseInstanceForm(forms.ModelForm):
         # If course is not connected to SIS system, disable the enroll checkbox
         if not self.instance.sis_id:
             self.fields['sis_enroll'].disabled = True
+
+    def clean_teachers(self):
+        """
+        Validate and convert comma-separated user IDs to UserProfile objects.
+        """
+        user_ids_text = self.cleaned_data.get('teachers', '')
+        if not user_ids_text:
+            return []
+
+        # Split by comma and strip whitespace
+        user_ids = []
+        for item in user_ids_text.split(','):
+            item = item.strip()
+            if item:
+                try:
+                    user_id = int(item)
+                    user_ids.append(user_id)
+                except ValueError:
+                    # Skip invalid values
+                    continue
+
+        # Look up users by ID
+        teachers = list(UserProfile.objects.filter(user_id__in=user_ids))
+
+        # Verify all IDs were found
+        if len(teachers) != len(user_ids):
+            raise ValidationError(
+                _('COURSE_TEACHERS_INVALID_USER_IDS')
+            )
+
+        return teachers
+
+    def clean_assistants(self):
+        """
+        Validate and convert comma-separated user IDs to UserProfile objects.
+        """
+        user_ids_text = self.cleaned_data.get('assistants', '')
+        if not user_ids_text:
+            return []
+
+        # Split by comma and strip whitespace
+        user_ids = []
+        for item in user_ids_text.split(','):
+            item = item.strip()
+            if item:
+                try:
+                    user_id = int(item)
+                    user_ids.append(user_id)
+                except ValueError:
+                    # Skip invalid values
+                    continue
+
+        # Look up users by ID
+        assistants = list(UserProfile.objects.filter(user_id__in=user_ids))
+
+        # Verify all IDs were found
+        if len(assistants) != len(user_ids):
+            raise ValidationError(
+                _('COURSE_ASSISTANTS_INVALID_USER_IDS')
+            )
+
+        return assistants
 
     def clean_url(self):
         if self.instance and self.instance.visible_to_students:

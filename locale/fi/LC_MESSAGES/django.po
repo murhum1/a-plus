@@ -2319,6 +2319,38 @@ msgid "COURSE_REMOVES_SUBMISSION_POSSIBILITY_STUDENTS"
 msgstr "Arkistoinnin jälkeen tehtävien palauttaminen ei ole enää mahdollista."
 
 #: edit_course/course_forms.py
+msgid "COURSE_TEACHERS_EMAIL_HELPTEXT"
+msgstr "Syötä lisättävän opettajan sähköpostiosoite."
+
+#: edit_course/course_forms.py
+msgid "COURSE_ASSISTANTS_EMAIL_HELPTEXT"
+msgstr "Syötä lisättävän assistentin sähköpostiosoite."
+
+#: edit_course/course_forms.py
+msgid "COURSE_TEACHER_EMAIL_NOT_FOUND"
+msgstr "Käyttäjää ei löytynyt sähköpostiosoitteella: {email}"
+
+#: edit_course/course_forms.py
+msgid "COURSE_ASSISTANT_EMAIL_NOT_FOUND"
+msgstr "Käyttäjää ei löytynyt sähköpostiosoitteella: {email}"
+
+#: edit_course/course_forms.py
+msgid "COURSE_TEACHERS_INVALID_USER_IDS"
+msgstr "Yksi tai useampi opettajan käyttäjätunnus on virheellinen"
+
+#: edit_course/course_forms.py
+msgid "COURSE_ASSISTANTS_INVALID_USER_IDS"
+msgstr "Yksi tai useampi assistentin käyttäjätunnus on virheellinen"
+
+#: templates/email_user_select.html
+msgid "ENTER_EMAIL_TO_ADD"
+msgstr "Syötä sähköpostiosoite ja paina Enter/Lisää"
+
+#: templates/email_user_select.html
+msgid "ADD_USER"
+msgstr "Lisää"
+
+#: edit_course/course_forms.py
 msgid "ERROR_URL_ALREADY_TAKEN"
 msgstr "URL on jo käytössä."
 

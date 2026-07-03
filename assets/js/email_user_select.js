@@ -1,0 +1,251 @@
+/**
+ * Email User Select Widget
+ * 
+ * Allows users to add/remove users by email address. Validates emails against the backend
+ * and displays selected users as badges. The hidden field contains the comma-separated
+ * list of UIDs which is the actual form value.
+ */
+
+(function() {
+    // Store all widget instances
+    const widgets = new Map();
+
+    /**
+     * Initialize an email user select widget
+     * @param {string} widgetId - The unique ID for this widget
+     * @param {string} apiUrl - The API endpoint to search users (default: /api/v2/users/)
+     */
+    function initWidget(widgetId, apiUrl) {
+        const widget = {
+            id: widgetId,
+            apiUrl: apiUrl || '/api/v2/users/',
+            input: document.getElementById(`${widgetId}_input`),
+            addBtn: document.getElementById(`${widgetId}_add_btn`),
+            badgeList: document.getElementById(`${widgetId}_badges`),
+            hiddenField: document.getElementById(`${widgetId}_value`),
+            errorDiv: document.getElementById(`${widgetId}_error`)
+        };
+
+        if (!widget.input || !widget.addBtn || !widget.badgeList || !widget.hiddenField) {
+            console.error(`EmailUserSelect: Missing elements for widget ${widgetId}`);
+            return;
+        }
+
+        widgets.set(widgetId, widget);
+
+        // Event listeners
+        widget.addBtn.addEventListener('click', () => addEmail(widgetId));
+        widget.input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addEmail(widgetId);
+            }
+        });
+    }
+
+    /**
+     * Add a user to the badge list by email
+     * @param {string} widgetId - The widget ID
+     */
+    async function addEmail(widgetId) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return;
+
+        const email = widget.input.value.trim();
+        if (!email) {
+            showError(widgetId, 'Please enter an email address');
+            return;
+        }
+
+        // Check if user already exists in the list
+        if (userExists(widgetId, email)) {
+            showError(widgetId, `User with email "${email}" is already in the list`);
+            widget.input.value = '';
+            return;
+        }
+
+        try {
+            // Find user by email against backend
+            const users = await findUserByEmail(widgetId, email);
+            
+            if (!users || users.length === 0) {
+                showError(widgetId, `No user found with email "${email}"`);
+                return;
+            }
+            
+            if (users.length === 1) {
+                const user = users[0];
+                addBadge(widgetId, user);
+            } else {
+                // If multiple users found, show error
+                const userList = users.map(u => `${u.full_name || u.username} (${u.email})`).join(', ');
+                showError(widgetId, `Multiple users found for email "${email}": ${userList}`);
+                return;
+            }
+
+            // Clear input and hide error
+            widget.input.value = '';
+            hideError(widgetId);
+            
+        } catch (error) {
+            showError(widgetId, `Error validating email: ${error.message}`);
+        }
+    }
+
+    /**
+     * Validate email against the backend API
+     * Uses the UserViewSet search endpoint with exact email match
+     * @param {string} widgetId - The widget ID
+     * @param {string} email - The email to validate
+     * @returns {boolean} - True if user exists with this email
+     */
+    async function findUserByEmail(widgetId, email) {
+        const widget = widgets.get(widgetId);
+        
+        try {
+            // Use the search parameter - the API now uses =user__email for exact match
+            const response = await fetch(`${widget.apiUrl}?search=${encodeURIComponent(email)}`);
+            
+            if (!response.ok) {
+                console.error('API response error:', response.status);
+                return false;
+            }
+
+            return (await response.json()).results;
+        } catch (error) {
+            console.error('Error validating email:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Check if a user already exists in the badge list
+     * @param {string} widgetId - The widget ID
+     * @param {string} email - The email to check
+     * @returns {boolean} - True if user exists in the list
+     */
+    function userExists(widgetId, email) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return false;
+
+        const badges = widget.badgeList.querySelectorAll('.badge-item');
+        for (const badge of badges) {
+            if (badge.dataset.email === email) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Add a badge to the list
+     * @param {string} widgetId - The widget ID
+     * @param {Object} user - The user object
+     */
+    function addBadge(widgetId, user) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return;
+
+        const displayName = user.full_name || user.username || user.email;
+        
+        const li = document.createElement('li');
+        li.className = 'list-inline-item badge-item';
+        li.dataset.email = user.email;
+        li.dataset.userId = user.id; // Store user ID
+        
+        li.innerHTML = `
+            <button class="aplus-button--secondary aplus-button--sm btn btn-sm btn-secondary" onclick="removeUser('${widgetId}', '${user.id}')">
+                ${displayName}, ${user.student_id}, ${user.email}
+                <span aria-label="Remove">x
+                </span>
+            </button>
+        `;
+
+        widget.badgeList.appendChild(li);
+        updateHiddenField(widgetId);
+    }
+
+    /**
+     * Remove a user from the badge list
+     * @param {string} widgetId - The widget ID
+     * @param {string} id - The user ID to remove
+     */
+    window.removeUser = function(widgetId, id) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return;
+
+        const badge = widget.badgeList.querySelector(`[data-user-id="${id}"]`);
+        if (badge) {
+            badge.remove();
+            updateHiddenField(widgetId);
+        }
+    };
+
+    /**
+     * Update the hidden field with current user IDs
+     * @param {string} widgetId - The widget ID
+     */
+    function updateHiddenField(widgetId) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return;
+
+        const userIds = [];
+        const badges = widget.badgeList.querySelectorAll('.badge-item');
+        
+        badges.forEach(badge => {
+            const userId = badge.dataset.userId;
+            if (userId) {
+                userIds.push(userId);
+            }
+        });
+
+        // Store as comma-separated user IDs
+        widget.hiddenField.value = userIds.join(', ');
+    }
+
+    /**
+     * Show error message
+     * @param {string} widgetId - The widget ID
+     * @param {string} message - Error message to display
+     */
+    function showError(widgetId, message) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return;
+
+        widget.errorDiv.textContent = message;
+        widget.errorDiv.style.display = 'block';
+        
+        // Hide error after 5 seconds
+        setTimeout(() => {
+            hideError(widgetId);
+        }, 5000);
+    }
+
+    /**
+     * Hide error message
+     * @param {string} widgetId - The widget ID
+     */
+    function hideError(widgetId) {
+        const widget = widgets.get(widgetId);
+        if (!widget) return;
+
+        widget.errorDiv.style.display = 'none';
+    }
+
+    // Auto-initialize widgets when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        // Look for all email user select widgets
+        document.querySelectorAll('[data-email-user-select]').forEach(element => {
+            const widgetId = element.id;
+            const apiUrl = element.dataset.apiUrl || '/api/v2/users/';
+            initWidget(widgetId, apiUrl);
+        });
+    });
+
+    // Expose functions globally for inline event handlers
+    window.EmailUserSelect = {
+        initWidget,
+        addEmail,
+        removeUser
+    };
+})();
