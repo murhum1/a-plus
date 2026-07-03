@@ -2350,6 +2350,10 @@ msgstr "Syötä sähköpostiosoite ja paina Enter/Lisää"
 msgid "ADD_USER"
 msgstr "Lisää"
 
+#: course/forms.py
+msgid "ERROR_INVALID_USER_IDS"
+msgstr "Yksi tai useampi käyttäjätunnus on virheellinen"
+
 #: edit_course/course_forms.py
 msgid "ERROR_URL_ALREADY_TAKEN"
 msgstr "URL on jo käytössä."
