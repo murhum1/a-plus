@@ -2337,6 +2337,10 @@ msgstr "Enter email address and press Enter/Add"
 msgid "ADD_USER"
 msgstr "Add"
 
+#: course/forms.py
+msgid "ERROR_INVALID_USER_IDS"
+msgstr "One or more user IDs are invalid"
+
 #: edit_course/course_forms.py
 msgid "ERROR_URL_ALREADY_TAKEN"
 msgstr "The URL is already taken."
