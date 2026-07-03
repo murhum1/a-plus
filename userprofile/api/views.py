@@ -24,7 +24,7 @@ class UserViewSet(ListSerializerMixin,
 
     `GET /users/?search=email@address.com`:
         returns a list of users matching the exact email address.
-        The search parameter is required and must be a valid email.
+        The search parameter is required.
 
     `GET /users/<user_id>/`:
         returns the details of a specific user.
@@ -49,15 +49,14 @@ class UserViewSet(ListSerializerMixin,
 
     def get_queryset(self):
         """
-        Only return users when searching by exact email address.
+        Only return users in list view when searching by exact email address.
         Prevents listing all users.
         """
-        # If no search parameter, return empty queryset
-        if not self.request.query_params.get('search'):
-            return UserProfile.objects.none()
-
-        # Get the base queryset
         queryset = super().get_queryset()
+
+        # Only restrict the list endpoint
+        if getattr(self, 'action', None) == 'list' and not self.request.query_params.get('search'):
+            return queryset.none()
 
         return queryset
 

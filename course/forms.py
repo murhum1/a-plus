@@ -150,6 +150,7 @@ class GroupEditForm(forms.ModelForm):
 class EnrollStudentsForm(forms.Form):
 
     user_profiles = forms.CharField(
+        label=_('LABEL_USERS'),
         widget=EmailUserSelect(),
         required=False,
     )
@@ -173,15 +174,18 @@ class EnrollStudentsForm(forms.Form):
 
         # Split by comma and strip whitespace
         user_ids = []
+        seen = set()
         for item in user_ids_text.split(','):
             item = item.strip()
-            if item:
-                try:
-                    user_id = int(item)
-                    user_ids.append(user_id)
-                except ValueError:
-                    # Skip invalid values
-                    continue
+            if not item:
+                continue
+            try:
+                user_id = int(item)
+            except ValueError as exc:
+                raise ValidationError(_('ERROR_INVALID_USER_IDS')) from exc
+            if user_id not in seen:
+                seen.add(user_id)
+                user_ids.append(user_id)
 
         # Look up users by ID
         users = list(UserProfile.objects.filter(user_id__in=user_ids))

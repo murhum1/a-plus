@@ -2330,6 +2330,14 @@ msgid "COURSE_ASSISTANTS_INVALID_USER_IDS"
 msgstr "One or more assistant user IDs are invalid"
 
 #: templates/email_user_select.html
+msgid "SELECTED_USERS"
+msgstr "Selected users"
+
+#: templates/email_user_select.html
+msgid "NO_USERS_ADDED_YET"
+msgstr "No users added yet"
+
+#: templates/email_user_select.html
 msgid "ENTER_EMAIL_TO_ADD"
 msgstr "Enter email address and press Enter/Add"
 

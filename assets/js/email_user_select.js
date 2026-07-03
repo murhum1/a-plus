@@ -147,19 +147,27 @@
         if (!widget) return;
 
         const displayName = user.full_name || user.username || user.email;
-        
+
+        const parts = [displayName, user.student_id, user.email].filter(Boolean);
+        const text = parts.join(', ');
+
         const li = document.createElement('li');
         li.className = 'list-inline-item badge-item';
-        li.dataset.email = user.email;
-        li.dataset.userId = user.id; // Store user ID
+        li.dataset.email = String(user.email || '');
+        li.dataset.userId = String(user.id); // Store user ID
         
-        li.innerHTML = `
-            <button class="aplus-button--secondary aplus-button--sm btn btn-sm btn-secondary" onclick="removeUser('${widgetId}', '${user.id}')">
-                ${displayName}, ${user.student_id}, ${user.email}
-                <span aria-label="Remove">x
-                </span>
-            </button>
-        `;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'aplus-button--secondary aplus-button--sm btn btn-sm btn-secondary';
+        button.addEventListener('click', () => window.removeUser(widgetId, String(user.id)));
+
+        const removeSpan = document.createElement('span');
+        removeSpan.setAttribute('aria-label', 'Remove');
+        removeSpan.textContent = 'x';
+
+        button.append(document.createTextNode(`${text} `), removeSpan);
+        li.appendChild(button);
+
 
         widget.badgeList.appendChild(li);
         updateHiddenField(widgetId);

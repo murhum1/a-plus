@@ -208,7 +208,11 @@ class EmailUserSelect(forms.TextInput):
 
         context = super().get_context(name, value, attrs)
 
-        context['selected_users'] = value
+        # When bound, the field value is a raw string; don't iterate it as "selected users".
+        if value is None or isinstance(value, str):
+            context['selected_users'] = []
+        else:
+            context['selected_users'] = value
         # Use the input ID, not the wrapper ID
         context['widget_id'] = context['widget']['attrs'].get('id', '')
         return context
