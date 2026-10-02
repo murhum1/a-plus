@@ -7,8 +7,7 @@ class IsAdminOrUserObjIsSelf(Permission, FilterBackend):
     def is_super(self, user):
         return (
             user.is_staff or
-            user.is_superuser or
-            isinstance(user, GraderUser) # grader is considered admin
+            user.is_superuser
         )
 
     def has_object_permission(self, request, view, obj):
